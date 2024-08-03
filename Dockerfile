@@ -3,6 +3,9 @@ FROM ubuntu:latest
 WORKDIR /opt/download
 RUN mkdir -p extract/java extract/maven extract/tomcat
 
+# Install curl
+RUN apt-get update && apt-get install -y curl
+
 # Download files
 RUN curl -O https://downloads.apache.org/tomcat/tomcat-9/v9.0.91/bin/apache-tomcat-9.0.91.zip \
     && curl -O https://downloads.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.zip \
