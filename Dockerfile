@@ -1,3 +1,5 @@
+FROM ubuntu:latest
+
 WORKDIR /opt/download
 RUN mkdir -p extract/java extract/maven extract/tomcat
 
