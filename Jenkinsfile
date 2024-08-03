@@ -22,11 +22,11 @@ pipeline {
 	    steps {
 		sh 'docker run -dit --name=containerpipeline kunalsh/pipetest1 /bin/bash'
 		}}
-		stage('Build') {
+		stage('compile') {
            steps {
 		  sh '/opt/download/extract/maven/apache-maven-3.9.8/bin/mvn install'
                  }}
-		stage('Deployment'){
+		stage('package'){
 	    steps {
 		sh 'cp target/tt1.war /opt/download/extract/tomcat/apache-tomcat-9.0.91/webapps'
 		}}
