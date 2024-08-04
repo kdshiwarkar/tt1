@@ -7,7 +7,7 @@ ENV TOMCAT_VERSION 9.0.89
 
 # Install necessary packages
 RUN apt-get update && \
-    apt-get install -y wget tar openjdk-11-jdk
+    apt-get install -y wget tar openjdk-11-jdk git
 
 # Install Maven
 RUN wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -P /tmp && \
@@ -25,8 +25,8 @@ ENV MAVEN_HOME /opt/maven
 ENV CATALINA_HOME /opt/tomcat
 ENV PATH $MAVEN_HOME/bin:$CATALINA_HOME/bin:$PATH
 
-# Copy the project source code into the container
-COPY . /usr/src/app
+# Clone the repository
+RUN git clone https://github.com/kdshiwarkar/tt1.git /usr/src/app
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -42,6 +42,7 @@ EXPOSE 8080
 
 # Start Tomcat
 CMD ["catalina.sh", "run"]
+
 
 
 
