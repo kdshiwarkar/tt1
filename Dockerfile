@@ -1,62 +1,47 @@
-# Use the latest Ubuntu image as the base image
+# Use an official Ubuntu as a parent image
 FROM ubuntu:latest
 
-# Maintainer information
-MAINTAINER kdshiwarkar@gmail.com
+# Set environment variables
+ENV MAVEN_VERSION 3.9.7
+ENV TOMCAT_VERSION 9.0.89
 
-# Update all packages and install dependencies
+# Install necessary packages
 RUN apt-get update && \
-    apt-get install -y \
-    wget \
-    vim \
-    git \
-    ssh \
-    openjdk-11-jdk \
-    maven \
-    docker.io
+    apt-get install -y wget tar openjdk-11-jdk
 
-# Set up Docker stable repository and update packages
-RUN apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common && \
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-    add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
-    apt-get update && \
-    apt-get install -y docker-ce docker-ce-cli containerd.io
+# Install Maven
+RUN wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -P /tmp && \
+    tar xf /tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven && \
+    ln -s /opt/maven/bin/mvn /usr/bin/mvn
 
-# Start SSH service
-RUN service ssh start
+# Install Tomcat
+RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -P /tmp && \
+    tar xf /tmp/apache-tomcat-${TOMCAT_VERSION}.tar.gz -C /opt && \
+    ln -s /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat
 
-# Create working directory
-WORKDIR /download/extract/
+# Set environment variables for Maven and Tomcat
+ENV MAVEN_HOME /opt/maven
+ENV CATALINA_HOME /opt/tomcat
+ENV PATH $MAVEN_HOME/bin:$CATALINA_HOME/bin:$PATH
 
-# Install Maven, Java, and Tomcat
-RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.89/bin/apache-tomcat-9.0.89.tar.gz && \
-    tar -xvzf apache-tomcat-9.0.89.tar.gz && \
-    mv apache-tomcat-9.0.89 tomcat && \
-    wget https://downloads.apache.org/maven/maven-3/3.9.7/binaries/apache-maven-3.9.7-bin.tar.gz && \
-    tar -xvzf apache-maven-3.9.7-bin.tar.gz && \
-    mv apache-maven-3.9.7 maven
+# Copy the project source code into the container
+COPY . /usr/src/app
 
-# Environment variables
-ENV MAVEN_HOME=/download/extract/maven
-ENV PATH=$MAVEN_HOME/bin:$PATH
+# Set the working directory
+WORKDIR /usr/src/app
 
-# Copy the application files
-COPY . /download/extract/
+# Build the application
+RUN mvn install
 
-# Stage names in Dockerfile
-RUN /download/extract/maven/bin/mvn install
-RUN cp /download/extract/target/tt1.war /download/extract/tomcat/webapps/
+# Copy the WAR file to the Tomcat webapps directory
+RUN cp target/tabletennis.war $CATALINA_HOME/webapps/
 
-# Expose ports (example: Tomcat default port 8080)
+# Expose the Tomcat port
 EXPOSE 8080
 
 # Start Tomcat
-CMD ["/download/extract/tomcat/bin/catalina.sh", "run"]
+CMD ["catalina.sh", "run"]
+
 
 
