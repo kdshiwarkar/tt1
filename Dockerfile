@@ -1,37 +1,62 @@
+# Use the latest Ubuntu image as the base image
 FROM ubuntu:latest
 
-WORKDIR /opt/download
-RUN mkdir -p extract/java extract/maven extract/tomcat
+# Maintainer information
+MAINTAINER kdshiwarkar@gmail.com
 
-# Install curl and unzip
-RUN apt-get update && apt-get install -y curl unzip
+# Update all packages and install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    vim \
+    git \
+    ssh \
+    openjdk-11-jdk \
+    maven \
+    docker.io
 
-# Download files
-RUN curl -f -O https://downloads.apache.org/tomcat/tomcat-9/v9.0.91/bin/apache-tomcat-9.0.91.zip \
-    && curl -f -O https://downloads.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.zip \
-    && curl -f -O https://download.java.net/java/GA/jdk11/11.0.17/9/GPL/openjdk-11.0.17_linux-x64_bin.zip
+# Set up Docker stable repository and update packages
+RUN apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+    add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+    apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# Check if the files are downloaded correctly
-RUN if [! -f apache-tomcat-9.0.91.zip ]; then echo "Error: Unable to download apache-tomcat-9.0.91.zip"; exit 1; fi \
-    && if [! -f apache-maven-3.9.8-bin.zip ]; then echo "Error: Unable to download apache-maven-3.9.8-bin.zip"; exit 1; fi \
-    && if [! -f openjdk-11.0.17_linux-x64_bin.zip ]; then echo "Error: Unable to download openjdk-11.0.17_linux-x64_bin.zip"; exit 1; fi
+# Start SSH service
+RUN service ssh start
 
-# Extract files
-RUN unzip apache-tomcat-9.0.91.zip -d extract/tomcat/ && \
-    unzip apache-maven-3.9.8-bin.zip -d extract/maven/ && \
-    unzip openjdk-11.0.17_linux-x64_bin.zip -d extract/java/
+# Create working directory
+WORKDIR /download/extract/
 
-# Check if the extraction was successful
-RUN if [! -d extract/tomcat ]; then echo "Error: Unable to extract apache-tomcat-9.0.91.zip"; exit 1; fi \
-    && if [! -d extract/maven ]; then echo "Error: Unable to extract apache-maven-3.9.8-bin.zip"; exit 1; fi \
-    && if [! -d extract/java ]; then echo "Error: Unable to extract openjdk-11.0.17_linux-x64_bin.zip"; exit 1; fi
+# Install Maven, Java, and Tomcat
+RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.89/bin/apache-tomcat-9.0.89.tar.gz && \
+    tar -xvzf apache-tomcat-9.0.89.tar.gz && \
+    mv apache-tomcat-9.0.89 tomcat && \
+    wget https://downloads.apache.org/maven/maven-3/3.9.7/binaries/apache-maven-3.9.7-bin.tar.gz && \
+    tar -xvzf apache-maven-3.9.7-bin.tar.gz && \
+    mv apache-maven-3.9.7 maven
 
-# Move extracted files to correct directories
-RUN mv -f extract/tomcat/* extract/tomcat/ && \
-    mv -f extract/maven/* extract/maven/
+# Environment variables
+ENV MAVEN_HOME=/download/extract/maven
+ENV PATH=$MAVEN_HOME/bin:$PATH
 
-# Set environment variables
-ENV JAVA_HOME=/opt/download/extract/java
-ENV M2_HOME=/opt/download/extract/maven
-ENV PATH=$JAVA_HOME/bin:$M2_HOME/bin:$PATH
+# Copy the application files
+COPY . /download/extract/
+
+# Stage names in Dockerfile
+RUN /download/extract/maven/bin/mvn install
+RUN cp /download/extract/target/tt1.war /download/extract/tomcat/webapps/
+
+# Expose ports (example: Tomcat default port 8080)
+EXPOSE 8080
+
+# Start Tomcat
+CMD ["/download/extract/tomcat/bin/catalina.sh", "run"]
+
 
