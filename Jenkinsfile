@@ -20,7 +20,7 @@ pipeline {
        
 		stage('Container creation'){
 	    steps {
-		sh 'docker run -dit --name=containerpipeline kunalsh/containerpipe2 /bin/bash'
+		sh 'docker run -dit --name=kunalcont kunalsh/containerpipe2 /bin/bash'
 		}}
 		}}
 	
