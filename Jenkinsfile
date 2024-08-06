@@ -4,12 +4,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'git fsck --full'
             }
         }
         stage('Build') {
             steps {
-                sh '/home/kunalshiwarkar/Documents/Devops_software/tar/apache-maven-3.9.7/bin/mvn install'
+                sh 'mvn install'
             }
         }
         stage('Deployment'){
@@ -25,6 +24,11 @@ pipeline {
         stage('Container creation'){
             steps {
                 sh 'docker run -dit --name=kunalcont kunalsh/containerpipe2 /bin/bash'
+            }
+        }
+        stage('deploy in container ') {
+            steps {
+                sh 'cp target/tabletennis.war /opt/download/apache-tomcat-9.0.91/webapps'
             }
         }
     }
