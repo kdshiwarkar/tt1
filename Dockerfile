@@ -1,47 +1,35 @@
-# Use an official Ubuntu as a parent image
 FROM ubuntu:latest
+MAINTAINER kdshiwarkar@gmail.com
+
+# create directory 
+WORKDIR /opt/download/
+
+# update package list
+RUN apt-get update
+
+# upgrade package list
+RUN apt-get -y upgrade
+
+# install package
+RUN apt-get install -y git
+RUN apt-get install -y vim
+RUN apt-get update
+RUN apt-get install -y wget
+
+# download tomcat,maven,java
+RUN wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.91/bin/apache-tomcat-9.0.91.tar.gz
+RUN wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+RUN wget https://download.oracle.com/java/22/latest/jdk-22_linux-x64_bin.tar.gz
+
+# extract tar file 
+RUN tar -xvf apache-tomcat-9.0.91.tar.gz 
+RUN tar -xvf apache-maven-3.9.8-bin.tar.gz  
+RUN tar -xvf jdk-22_linux-x64_bin.tar.gz 
 
 # Set environment variables
-ENV MAVEN_VERSION 3.9.7
-ENV TOMCAT_VERSION 9.0.89
+ENV JAVA_HOME /opt/download/jdk-22.0.2
+ENV M2_HOME /opt/download/apache-maven-3.9.8
+ENV PATH=$JAVA_HOME/bin:$M2_HOME/bin:$PATH
 
-# Install necessary packages
-RUN apt-get update && \
-    apt-get install -y wget tar openjdk-11-jdk git
-
-# Install Maven
-RUN wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -P /tmp && \
-    tar xf /tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt && \
-    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven && \
-    ln -s /opt/maven/bin/mvn /usr/bin/mvn
-
-# Install Tomcat
-RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -P /tmp && \
-    tar xf /tmp/apache-tomcat-${TOMCAT_VERSION}.tar.gz -C /opt && \
-    ln -s /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat
-
-# Set environment variables for Maven and Tomcat
-ENV MAVEN_HOME /opt/maven
-ENV CATALINA_HOME /opt/tomcat
-ENV PATH $MAVEN_HOME/bin:$CATALINA_HOME/bin:$PATH
-
-# Clone the repository
-RUN git clone https://github.com/kdshiwarkar/tt1.git /usr/src/app
-
-# Check for corrupted objects
-RUN git fsck --full
-
-# Set the working directory
-WORKDIR /usr/src/app
-
-# Build the application
-RUN mvn install
-
-# Copy the WAR file to the Tomcat webapps directory
-RUN cp target/tabletennis.war $CATALINA_HOME/webapps/
-
-# Expose the Tomcat port
-EXPOSE 8080
-
-# Start Tomcat
-CMD ["catalina.sh", "run"]
+# Start Tomcat on container startup
+CMD ["/opt/download/apache-tomcat-9.0.91/bin/startup.sh"]
