@@ -28,6 +28,9 @@ ENV PATH $MAVEN_HOME/bin:$CATALINA_HOME/bin:$PATH
 # Clone the repository
 RUN git clone https://github.com/kdshiwarkar/tt1.git /usr/src/app
 
+# Check for corrupted objects
+RUN git fsck --full
+
 # Set the working directory
 WORKDIR /usr/src/app
 
@@ -42,7 +45,3 @@ EXPOSE 8080
 
 # Start Tomcat
 CMD ["catalina.sh", "run"]
-
-
-
-
